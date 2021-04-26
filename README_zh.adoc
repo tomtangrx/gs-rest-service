@@ -82,16 +82,13 @@ include::initial/build.gradle[]
 注意: 如果您的IDE有Spring Initializr集成，您可以从您的IDE完成这个过程。
 
 [[initial]]
-== Create a Resource Representation Class
+== 创建一个资源表示类
 
-Now that you have set up the project and build system, you can create your web service.
+现在你已经创建了一个项目，并且已经设置了构建系统，你可以开始创建你的web服务了。
 
-Begin the process by thinking about service interactions.
+首先考虑这个服务的交互。
 
-The service will handle `GET` requests for `/greeting`, optionally with a `name` parameter
-in the query string. The `GET` request should return a `200 OK` response with JSON in the
-body that represents a greeting. It should resemble the following output:
-
+这个服务处理`/greeting`的`GET`请求，在查询字符串中有一个可选参数`name`。这个`GET`请求需要返回的响应状态为`200 OK`，body内容为JSON格式的greeting，如下所示：
 ====
 [source,json]
 ----
@@ -102,13 +99,10 @@ body that represents a greeting. It should resemble the following output:
 ----
 ====
 
-The `id` field is a unique identifier for the greeting, and `content` is the textual
-representation of the greeting.
+ `id`字段是一个唯一标识符，`content`文本格式.
 
-To model the greeting representation, create a resource representation class. To do so,
-provide a plain old Java object with fields, constructors, and accessors for the `id` and
-`content` data, as the following listing (from
-`src/main/java/com/example/restservice/Greeting.java`) shows:
+为了模型化表示欢迎内容，需要创建一个资源表示类，创建一个POJO类，包括需要的字段、构造函数、字段`id`和`content`的访问器，内容如下所示（`src/main/java/com/example/restservice/Greeting.java`）：
+
 
 [source,java]
 ----
@@ -116,18 +110,15 @@ include::complete/src/main/java/com/example/restservice/Greeting.java[]
 ----
 
 ====
-NOTE: This application uses the https://github.com/FasterXML/jackson[Jackson JSON] library to
-automatically marshal instances of type `Greeting` into JSON. Jackson is included by default by the web starter.
+注意: 这个应用使用 https://github.com/FasterXML/jackson[Jackson JSON] 类库自动格式化`Greeting`实例为JSON。Jackson 已经默认包含到应用中。
 ====
 
-== Create a Resource Controller
+== 创建一个资源控制器
 
-In Spring's approach to building RESTful web services, HTTP requests are handled by a
-controller. These components are identified by the
-https://docs.spring.io/spring/docs/{spring_version}/javadoc-api/org/springframework/web/bind/annotation/RestController.html[`@RestController`]
-annotation, and the `GreetingController` shown in the following listing (from
-`src/main/java/com/example/restservice/GreetingController.java`) handles `GET` requests
-for `/greeting` by returning a new instance of the `Greeting` class:
+在Spring构建RESTful web服务的方法中，HTTP请求需要通过一个控制器处理。 这些组件通过
+https://docs.spring.io/spring/docs/{spring_version}/javadoc-api/org/springframework/web/bind/annotation/RestController.html[`@RestController`]注解标识，
+下面列出的`GreetingController` (
+`src/main/java/com/example/restservice/GreetingController.java`) 处理/greeting`来自的`GET` 请求，返回一个新的`Greeting`类实例：
 
 ====
 [source,java]
@@ -136,38 +127,26 @@ include::complete/src/main/java/com/example/restservice/GreetingController.java[
 ----
 ====
 
-This controller is concise and simple, but there is plenty going on under the hood. We
-break it down step by step.
+这个控制器非常简洁和简单，但是背后有很多的内幕，我们一步一步解析它。
 
-The `@GetMapping` annotation ensures that HTTP GET requests to `/greeting` are mapped to the `greeting()` method.
+`@GetMapping` 注解确保`/greeting`的GET请求指向方法`greeting()`。
 
-NOTE: There are companion annotations for other HTTP verbs (e.g. `@PostMapping` for POST). There is also a `@RequestMapping` annotation that they all derive from, and can serve as a synonym (e.g. `@RequestMapping(method=GET)`).
+注意: 还有其他HTTP谓语注解 (如: POST请求使用`@PostMapping` )， 这两个都是从`@RequestMapping`注解派生出来的，可以作为同义词使用  (如. `@RequestMapping(method=GET)`).
 
-`@RequestParam` binds the value of the query string parameter `name` into the `name`
-parameter of the `greeting()` method. If the `name` parameter is absent in the request,
-the `defaultValue` of `World` is used.
+`@RequestParam`绑定查询字符串的参数`name`到方法`greeting()`的参数`name`。如果请求没有参数`name`则使用默认值`World`。
+方法创建并返回了一个`Greeting`对象，`id`属性为`counter`的下一个值，`content`属性使用模板`template`和参数`name`格式化。
 
-The implementation of the method body creates and returns a new `Greeting` object with
-`id` and `content` attributes based on the next value from the `counter` and formats the
-given `name` by using the greeting `template`.
+传统MVC控制器和REST风格web服务控制器的关键区别是控制器中HTTP响应体的创建方式，而不是依靠视图技术把数据在服务端通过HTML格式渲染。这个REST风格web服务控制器填充并返回一个`Greeting`对象，这个对象将作为JSON直接写入HTTP响应。
 
-A key difference between a traditional MVC controller and the RESTful web service
-controller shown earlier is the way that the HTTP response body is created. Rather than
-relying on a view technology to perform server-side rendering of the greeting data to
-HTML, this RESTful web service controller populates and returns a `Greeting` object. The
-object data will be written directly to the HTTP response as JSON.
-
-This code uses Spring
+代码使用了Spring
 https://docs.spring.io/spring/docs/{spring_version}/javadoc-api/org/springframework/web/bind/annotation/RestController.html[`@RestController`]
-annotation, which marks the class as a controller where every method returns a domain
-object instead of a view. It is shorthand for including both `@Controller` and
-`@ResponseBody`.
+注解, 标记这个类是一个控制器并且每个方法返回一个领域对象而不是一个视图。这是包括`@Controller` 和
+`@ResponseBody`的简写。
 
-The `Greeting` object must be converted to JSON. Thanks to Spring's HTTP message converter
-support, you need not do this conversion manually. Because
-https://github.com/FasterXML/jackson[Jackson 2] is on the classpath, Spring's
+对象`Greeting` 必须被转换为JSON。感谢Spring的HTTP消息转换器支持，你不需要手动执行转换。因为
+https://github.com/FasterXML/jackson[Jackson 2]已经在classpath, Spring的
 https://docs.spring.io/spring/docs/{spring_version}/javadoc-api/org/springframework/http/converter/json/MappingJackson2HttpMessageConverter.html[`MappingJackson2HttpMessageConverter`]
-is automatically chosen to convert the `Greeting` instance to JSON.
+自动选择它把`Greeting` 实例转换为JSON。
 
 include::https://raw.githubusercontent.com/spring-guides/getting-started-macros/master/spring-boot-application-new-path.adoc[]
 
@@ -175,12 +154,12 @@ include::https://raw.githubusercontent.com/spring-guides/getting-started-macros/
 
 include::https://raw.githubusercontent.com/spring-guides/getting-started-macros/master/build_an_executable_jar_with_both.adoc[]
 
-Logging output is displayed. The service should be up and running within a few seconds.
+显示日志输出，服务应该在几秒钟内启动并运行。
 
 
 == 测试这个服务
 
-Now that the service is up, visit `http://localhost:8080/greeting`, where you should see:
+现在服务已经启动了, 打开链接 `http://localhost:8080/greeting`, 内容如下:
 
 ====
 [source,json]
@@ -189,9 +168,7 @@ Now that the service is up, visit `http://localhost:8080/greeting`, where you sh
 ----
 ====
 
-Provide a `name` query string parameter by visiting
-`http://localhost:8080/greeting?name=User`. Notice how the value of the `content`
-attribute changes from `Hello, World!` to `Hello, User!`, as the following listing shows:
+通过查询字符串参数`name`访问`http://localhost:8080/greeting?name=User`。 注意`content`的内容从 `Hello, World!` 变为 `Hello, User!`, 如下所示:
 
 ====
 [source,json]
@@ -199,14 +176,8 @@ attribute changes from `Hello, World!` to `Hello, User!`, as the following listi
 {"id":2,"content":"Hello, User!"}
 ----
 ====
-
-This change demonstrates that the `@RequestParam` arrangement in `GreetingController` is
-working as expected. The `name` parameter has been given a default value of `World` but
-can be explicitly overridden through the query string.
-
-Notice also how the `id` attribute has changed from `1` to `2`. This proves that you are
-working against the same `GreetingController` instance across multiple requests and that
-its `counter` field is being incremented on each call as expected.
+这个改变说明`@RequestParam`注解如预期工作。参数`name`默认值为`World`,但是可以通过查询字符串覆盖。
+注意`id`属性从`1`变为`2`。 这个证明你在多次请求访问相同的`GreetingController`实例，并且它的`counter`字段按预期递增。
 
 == 总结
 
